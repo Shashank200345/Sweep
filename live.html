@@ -1,0 +1,1684 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Sweep · Live SMC Structure & Jev AI Trading Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <style>
+    :root {
+      --bg: #06070a;
+      --bg-card: #0c0f17;
+      --bg-card-hover: #111622;
+      --panel: #0d1118;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      --ink: #f1f5f9;
+      --dim: #8492a6;
+      --faint: #475569;
+      --emerald: #10b981;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --sky: #38bdf8;
+      --purple: #a855f7;
+      --magenta: #ff5fc8;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font-sans); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    
+    /* Layout */
+    .app-container { display: flex; flex-direction: column; min-height: 100vh; }
+    
+    /* Top Navigation Bar */
+    header {
+      height: 60px;
+      background: rgba(12, 15, 23, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: conic-gradient(from 180deg, var(--magenta), var(--purple), var(--sky), var(--magenta));
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 16px; color: #06070a;
+      box-shadow: 0 0 20px rgba(255, 95, 200, 0.4);
+    }
+    .brand-title { display: flex; flex-direction: column; }
+    .brand-title h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+    .brand-title span { font-size: 10px; font-family: var(--font-mono); color: var(--dim); text-transform: uppercase; letter-spacing: 0.12em; }
+    .badge-live {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 8px; border-radius: 20px;
+      font-size: 10px; font-family: var(--font-mono); font-weight: 600;
+      background: rgba(16, 185, 129, 0.12); color: var(--emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      letter-spacing: 0.05em;
+    }
+    .badge-live::before {
+      content: ""; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--emerald); box-shadow: 0 0 10px var(--emerald);
+      animation: pulse-glow 2s infinite ease-in-out;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .top-meta { display: flex; align-items: center; gap: 20px; }
+    .meta-stat { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+    .meta-stat-label { font-size: 9px; font-family: var(--font-mono); color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; }
+    .meta-stat-val { font-size: 13px; font-family: var(--font-mono); font-weight: 600; color: var(--ink); }
+
+    /* Main Grid */
+    main { flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* KPI Banner */
+    .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::after {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--accent-color, var(--sky)); opacity: 0.8;
+    }
+    .kpi-card:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }
+    .kpi-label { font-size: 10px; font-family: var(--font-mono); color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; display: flex; justify-content: space-between; align-items: center; }
+    .kpi-val { font-size: 20px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.02em; display: flex; align-items: baseline; gap: 8px; }
+    .kpi-sub { font-size: 11px; font-family: var(--font-mono); color: var(--dim); }
+
+    /* Content Layout */
+    .workspace-grid { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 20px; min-height: 720px; }
+    
+    /* Dual Chart Workspace */
+    .dual-chart-section {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+    .chart-master-header {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .layout-switch-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .layout-btn {
+      background: transparent;
+      border: none;
+      color: var(--dim);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+    .layout-btn:hover { color: var(--ink); background: rgba(255, 255, 255, 0.06); }
+    .layout-btn.active {
+      background: var(--sky);
+      color: #06070a;
+      font-weight: 700;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+    }
+
+    .smc-header-pills { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 4px; font-size: 10px; font-family: var(--font-mono); font-weight: 500;
+      border: 1px solid var(--border); background: #080a10;
+    }
+    .pill-ob { border-color: rgba(244, 63, 94, 0.4); background: rgba(244, 63, 94, 0.12); color: var(--rose); }
+    .pill-fvg { border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.12); color: var(--sky); }
+    .pill-bos { border-color: rgba(255, 209, 102, 0.4); background: rgba(255, 209, 102, 0.12); color: #ffd166; }
+    .pill-setup { border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.12); color: var(--emerald); }
+
+    /* Dual Chart Grid Container */
+    .dual-chart-grid {
+      display: grid;
+      gap: 16px;
+      height: 720px;
+      min-height: 720px;
+      transition: all 0.25s ease;
+      min-width: 0;
+    }
+    .dual-chart-grid.mode-split {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .dual-chart-grid.mode-tv {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .dual-chart-grid.mode-tv #smcSubPanel {
+      display: none !important;
+    }
+    .dual-chart-grid.mode-smc {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .dual-chart-grid.mode-smc #tvSubPanel {
+      display: none !important;
+    }
+
+    /* Sub Chart Panels */
+    .sub-chart-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: 100%;
+      min-width: 0;
+      position: relative;
+    }
+    .sub-panel-head {
+      height: 44px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(18, 22, 33, 0.5);
+      font-family: var(--font-mono);
+      gap: 10px;
+    }
+    .sub-panel-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sub-panel-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .badge-sub {
+      font-size: 9.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: #080a10;
+      color: var(--dim);
+      font-family: var(--font-mono);
+      font-weight: 500;
+    }
+
+    /* TradingView Viewport & Status Bar */
+    #tvViewport {
+      flex: 1;
+      width: 100%;
+      height: calc(100% - 84px);
+      display: flex;
+      flex-direction: column;
+      background: #06070a;
+      overflow: hidden;
+    }
+    #tradingview_advanced_chart {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+    }
+    .tv-status-bar {
+      height: 40px;
+      background: #080a10;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--dim);
+      gap: 8px;
+    }
+    .tv-action-btn {
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--sky);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 600;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .tv-action-btn:hover { background: rgba(56, 189, 248, 0.25); color: #fff; border-color: var(--sky); }
+
+    /* Native SMC Viewport & Legend Bar */
+    .chart-viewport {
+      flex: 1;
+      position: relative;
+      background: #06070a;
+      overflow: hidden;
+      cursor: crosshair;
+      height: calc(100% - 84px);
+      width: 100%;
+    }
+    #smcChartCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .smc-legend-bar {
+      height: 40px;
+      border-top: 1px solid var(--border);
+      background: #080a10;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--dim);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .smc-legend-bar::-webkit-scrollbar { display: none; }
+    .legend-item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .legend-color { width: 10px; height: 6px; border-radius: 1px; }
+
+    /* Interactive Hover Tooltip */
+    #chart-tooltip {
+      position: absolute; display: none; pointer-events: none;
+      background: rgba(10, 14, 23, 0.94); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 6px;
+      padding: 8px 12px; font-family: var(--font-mono); font-size: 10px;
+      color: var(--ink); z-index: 30; box-shadow: 0 8px 24px rgba(0,0,0,0.65);
+      line-height: 1.4;
+    }
+    #chart-tooltip b { color: var(--sky); }
+
+    /* Zoom / Reset Controls Overlay */
+    .chart-controls-overlay {
+      position: absolute; top: 10px; right: 12px; z-index: 20;
+      display: flex; gap: 4px; background: rgba(10, 14, 23, 0.85);
+      padding: 3px; border-radius: 6px; border: 1px solid var(--border);
+    }
+    .ctrl-btn {
+      background: transparent; border: none; color: var(--dim);
+      font-family: var(--font-mono); font-size: 10px; padding: 3px 8px;
+      border-radius: 4px; cursor: pointer; transition: all 0.15s ease;
+    }
+    .ctrl-btn:hover { background: #161c28; color: var(--ink); }
+
+    /* Modal for Pine Script instructions */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(8px);
+      z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-content {
+      background: #0c0f17; border: 1px solid var(--border-hover); border-radius: 12px;
+      width: 100%; max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.85); overflow: hidden;
+    }
+    .modal-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex;
+      align-items: center; justify-content: space-between; background: rgba(18, 22, 33, 0.6);
+    }
+    .modal-body { padding: 20px; overflow-y: auto; font-family: var(--font-sans); font-size: 13px; line-height: 1.6; color: #cbd5e1; display: flex; flex-direction: column; gap: 14px; }
+    .modal-code-box {
+      background: #06070a; border: 1px solid var(--border); border-radius: 6px;
+      padding: 12px; font-family: var(--font-mono); font-size: 11px; max-height: 220px;
+      overflow-y: auto; color: var(--sky); white-space: pre; line-height: 1.4;
+    }
+    .modal-footer {
+      padding: 14px 20px; border-top: 1px solid var(--border); display: flex;
+      justify-content: flex-end; gap: 12px; background: rgba(18, 22, 33, 0.6);
+    }
+
+    @media (max-width: 1400px) {
+      .dual-chart-grid.mode-split {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .sub-chart-panel {
+        height: 520px;
+      }
+    }
+    .ctrl-btn:hover { background: #161c28; color: var(--ink); }
+
+    /* SMC Legend Bar */
+    .smc-legend {
+      height: 38px;
+      border-top: 1px solid var(--border);
+      background: #080a10;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 16px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--dim);
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-color { width: 12px; height: 7px; border-radius: 1px; }
+
+    /* Right: Algorithm & Jev Brain */
+    .sidebar-panel { display: flex; flex-direction: column; gap: 16px; }
+    
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-head {
+      height: 38px;
+      padding: 0 14px;
+      background: rgba(18, 22, 33, 0.5);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .card-head span { color: var(--dim); font-size: 9px; }
+
+    /* SMC Signals Grid */
+    .smc-grid { padding: 12px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .smc-cell { background: #080a10; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; }
+    .smc-cell-k { font-size: 9px; font-family: var(--font-mono); color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+    .smc-cell-v { font-size: 11.5px; font-family: var(--font-mono); font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Jev Questions Feed */
+    .jev-list { display: flex; flex-direction: column; max-height: 270px; overflow-y: auto; }
+    .q-row {
+      display: grid;
+      grid-template-columns: 125px 45px 1fr 42px;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      transition: background 0.15s ease;
+    }
+    .q-row:hover { background: rgba(255, 255, 255, 0.02); }
+    .q-name { color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .q-type { font-size: 8px; padding: 1px 4px; border-radius: 2px; text-align: center; border: 1px solid; }
+    .q-bar-box { background: rgba(255, 255, 255, 0.04); height: 14px; border-radius: 3px; overflow: hidden; display: flex; position: relative; }
+    .q-bar-fill { height: 100%; display: flex; align-items: center; padding-left: 4px; font-size: 8px; font-weight: 700; color: #000; }
+    .q-conf { text-align: right; color: var(--dim); font-size: 9.5px; }
+
+    /* Gate checks badge strip */
+    .gates-strip { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; background: #07090e; border-bottom: 1px solid var(--border); }
+    .gate-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 7px; border-radius: 4px; font-size: 9px;
+      font-family: var(--font-mono); font-weight: 500;
+      background: rgba(16, 185, 129, 0.08); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .gate-badge.fail { background: rgba(244, 63, 94, 0.08); color: var(--rose); border-color: rgba(244, 63, 94, 0.2); }
+
+    /* Active Position Card */
+    .pos-box { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+    .pos-header { display: flex; justify-content: space-between; align-items: center; }
+    .pos-title { font-size: 13px; font-weight: 700; font-family: var(--font-mono); }
+    .pos-greeks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: #080a10; padding: 8px; border-radius: 6px; border: 1px solid var(--border); }
+    .greek-item { display: flex; flex-direction: column; align-items: center; }
+    .greek-item s { text-decoration: none; font-size: 8.5px; font-family: var(--font-mono); color: var(--dim); }
+    .greek-item b { font-size: 11px; font-family: var(--font-mono); font-weight: 600; }
+
+    /* Decision Stream Table */
+    .activity-table { width: 100%; border-collapse: collapse; font-size: 10px; font-family: var(--font-mono); }
+    .activity-table th { padding: 7px 12px; text-align: left; color: var(--dim); background: rgba(18, 22, 33, 0.4); border-bottom: 1px solid var(--border); }
+    .activity-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+    .tag-action { padding: 2px 6px; border-radius: 3px; font-weight: 600; font-size: 8.5px; text-transform: uppercase; }
+    .tag-buy-puts, .tag-call_credit_spread { background: rgba(244, 63, 94, 0.15); color: var(--rose); border: 1px solid rgba(244, 63, 94, 0.3); }
+    .tag-buy-calls, .tag-put_credit_spread { background: rgba(16, 185, 129, 0.15); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tag-flat, .tag-no_trade { background: rgba(132, 146, 166, 0.12); color: var(--dim); border: 1px solid rgba(132, 146, 166, 0.25); }
+
+    /* Footer */
+    footer {
+      height: 32px;
+      padding: 0 24px;
+      background: #040507;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 9.5px;
+      font-family: var(--font-mono);
+      color: var(--dim);
+    }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">S</div>
+      <div class="brand-title">
+        <h1>Sweep · Live Trading Engine <span class="badge-live">LIVE FEED ACTIVE</span></h1>
+        <span>TypeSafe Jev System One · Smart Money Concepts · Defined-Risk Spreads</span>
+      </div>
+    </div>
+    <div class="top-meta">
+      <div class="meta-stat">
+        <span class="meta-stat-label">Data Provider</span>
+        <span class="meta-stat-val" style="color:var(--sky)">TradingView (AMEX:SPY)</span>
+      </div>
+      <div class="meta-stat">
+        <span class="meta-stat-label">Model Engine</span>
+        <span class="meta-stat-val" style="color:var(--magenta)">Jev-1.13.0 (System One)</span>
+      </div>
+      <div class="meta-stat">
+        <span class="meta-stat-label">Next 1h Bar Close</span>
+        <span class="meta-stat-val" id="countdown-val">--:--</span>
+      </div>
+      <div class="meta-stat">
+        <span class="meta-stat-label">Last Tick (ET)</span>
+        <span class="meta-stat-val" id="last-tick-time">--</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Top KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--accent-color: var(--emerald)">
+        <div class="kpi-label">Portfolio Equity <span>Paper</span></div>
+        <div class="kpi-val" id="kpi-equity">$100,000.00</div>
+        <div class="kpi-sub">Cash: <span id="kpi-cash">$100,000.00</span></div>
+      </div>
+      <div class="kpi-card" style="--accent-color: var(--sky)">
+        <div class="kpi-label">SPY Live Spot <span>AMEX</span></div>
+        <div class="kpi-val" id="kpi-spot">$764.02</div>
+        <div class="kpi-sub" id="kpi-spot-sub">1h Candle Close</div>
+      </div>
+      <div class="kpi-card" style="--accent-color: var(--magenta)">
+        <div class="kpi-label">Market Bias <span>Daily/H1</span></div>
+        <div class="kpi-val" id="kpi-bias">BEARISH</div>
+        <div class="kpi-sub">Confidence: <span id="kpi-bias-conf">100%</span></div>
+      </div>
+      <div class="kpi-card" style="--accent-color: var(--amber)">
+        <div class="kpi-label">Strategy Action <span>Algorithm</span></div>
+        <div class="kpi-val" id="kpi-action" style="font-size:17px">CALL SPREAD</div>
+        <div class="kpi-sub">Quality: <span id="kpi-quality">3.13 / 4.0</span></div>
+      </div>
+      <div class="kpi-card" style="--accent-color: var(--purple)">
+        <div class="kpi-label">Position State <span>Portfolio</span></div>
+        <div class="kpi-val" id="kpi-pos-state">FLAT</div>
+        <div class="kpi-sub" id="kpi-closed-count">0 Closed Trades</div>
+      </div>
+    </div>
+
+    <!-- Workspace Grid -->
+    <div class="workspace-grid">
+      <!-- Left: Dual-Chart Workspace (Split View / Focus Views) -->
+      <section class="dual-chart-section">
+        <!-- Master Control Bar -->
+        <div class="chart-master-header">
+          <div class="layout-switch-group">
+            <button class="layout-btn active" id="btn-split" onclick="setLayoutMode('split')" title="View TradingView and SMC Canvas Side-by-Side">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+              <span>Dual Split (LTF + HTF)</span>
+            </button>
+            <button class="layout-btn" id="btn-tv" onclick="setLayoutMode('tv')" title="Focus TradingView Full Width">
+              <span>⚡ TradingView Focus</span>
+            </button>
+            <button class="layout-btn" id="btn-smc" onclick="setLayoutMode('smc')" title="Focus SMC Engine Full Width">
+              <span>📐 SMC Engine Focus</span>
+            </button>
+          </div>
+
+          <div class="smc-header-pills" id="smcHeaderPills">
+            <span class="pill pill-ob" title="Active Bearish Order Block">🟥 Supply OB: <b id="pill-ob-val">$768.50 - $771.20</b></span>
+            <span class="pill pill-fvg" title="Active Fair Value Gap">🟦 FVG: <b id="pill-fvg-val">$763.10 - $764.50</b></span>
+            <span class="pill pill-bos" title="Last Break of Structure">⚡ BOS: <b id="pill-bos-val">BEARISH BOS</b></span>
+            <span class="pill pill-setup" title="Algorithm Recommendation">🎯 <b id="pill-setup-val">BEAR CALL SPREAD</b></span>
+          </div>
+        </div>
+
+        <!-- Dual Chart Grid -->
+        <div class="dual-chart-grid mode-split" id="dualChartGrid">
+          
+          <!-- Chart 1: TradingView Live Streaming Tape (LTF 5m/15m/1h) -->
+          <div class="sub-chart-panel" id="tvSubPanel">
+            <div class="sub-panel-head">
+              <div class="sub-panel-title">
+                <span style="color:var(--sky)">⚡</span> TradingView Live Tape · LTF
+              </div>
+              <div class="sub-panel-badges">
+                <span class="badge-sub" style="color:var(--emerald); border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.1)">● LIVE STREAMING</span>
+                <span class="badge-sub">AMEX:SPY</span>
+              </div>
+            </div>
+            <div id="tvViewport">
+              <div id="tradingview_advanced_chart"></div>
+              <div class="tv-status-bar">
+                <div style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  <span style="color:var(--dim)">Switch timeframes (1m/5m/15m) above for live tape</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <button class="tv-action-btn" onclick="openPineModal()">📋 Add Indicator</button>
+                  <button class="tv-action-btn" onclick="copyPineScript()">📋 Copy Script</button>
+                  <a href="https://www.tradingview.com/chart/?symbol=AMEX%3ASPY" target="_blank" style="color:var(--dim); text-decoration:none; font-size:10px;">↗</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 2: Sweep Native SMC Canvas (HTF 1-Hour Structure) -->
+          <div class="sub-chart-panel" id="smcSubPanel">
+            <div class="sub-panel-head">
+              <div class="sub-panel-title">
+                <span style="color:var(--magenta)">📐</span> Sweep SMC Engine · 1H Institutional
+              </div>
+              <div class="sub-panel-badges">
+                <span class="badge-sub" style="color:var(--amber); border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.1)">JEV DECISION TIMEFRAME</span>
+              </div>
+            </div>
+            <div class="chart-viewport" id="chartViewport">
+              <canvas id="smcChartCanvas"></canvas>
+              <div class="chart-controls-overlay">
+                <button class="ctrl-btn" onclick="zoomChart(-10)" title="Zoom in (+)">🔍 +</button>
+                <button class="ctrl-btn" onclick="zoomChart(10)" title="Zoom out (-)">🔍 -</button>
+                <button class="ctrl-btn" onclick="resetZoom()" title="Reset view">⟲ Reset</button>
+              </div>
+              <div id="chart-tooltip"></div>
+            </div>
+            <div class="smc-legend-bar">
+              <div class="legend-item"><div class="legend-color" style="background:#10b981"></div> <b>Bull OB</b></div>
+              <div class="legend-item"><div class="legend-color" style="background:#f43f5e"></div> <b>Bear OB</b></div>
+              <div class="legend-item"><div class="legend-color" style="background:rgba(56,189,248,0.7)"></div> <b>FVG</b></div>
+              <div class="legend-item"><div class="legend-color" style="background:#ffd166;height:2px"></div> <b>Pool</b></div>
+              <div class="legend-item"><div class="legend-color" style="background:#ffd166"></div> <b>BOS/CHoCH</b></div>
+              <div class="legend-item"><span style="color:#ff5470">▲</span><span style="color:#10b981">▼</span> <b>Pivots</b></div>
+              <div class="legend-item"><span style="color:#38bdf8">●</span><span style="color:#10b981"> ✕</span> <b>Trades</b></div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Right: Live Algorithm Brain & Execution Stream -->
+      <aside class="sidebar-panel">
+        <!-- Live SMC Structure Signals -->
+        <div class="card">
+          <div class="card-head">
+            Current SMC Structure Analysis
+            <span id="smc-status-tag">Deterministic Code</span>
+          </div>
+          <div class="smc-grid">
+            <div class="smc-cell">
+              <span class="smc-cell-k">Daily Bias</span>
+              <span class="smc-cell-v" id="smc-daily-bias" style="color:var(--rose)">Bearish</span>
+            </div>
+            <div class="smc-cell">
+              <span class="smc-cell-k">Hourly Trend</span>
+              <span class="smc-cell-v" id="smc-hourly-trend">Bearish (BOS)</span>
+            </div>
+            <div class="smc-cell">
+              <span class="smc-cell-k">Active Order Block</span>
+              <span class="smc-cell-v" id="smc-ob">Bearish (1-3 ATR)</span>
+            </div>
+            <div class="smc-cell">
+              <span class="smc-cell-k">Fair Value Gap</span>
+              <span class="smc-cell-v" id="smc-fvg">Tested (&lt;1 ATR)</span>
+            </div>
+            <div class="smc-cell">
+              <span class="smc-cell-k">Dealing Range Zone</span>
+              <span class="smc-cell-v" id="smc-zone" style="color:var(--amber)">Equilibrium</span>
+            </div>
+            <div class="smc-cell">
+              <span class="smc-cell-k">Volatility / IV Rank</span>
+              <span class="smc-cell-v" id="smc-iv">Normal</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live TypeSafe Jev System One Brain Panel -->
+        <div class="card">
+          <div class="card-head">
+            TypeSafe Jev · Parallel Decision Triad
+            <span id="jev-latency">Latency: 444 ms</span>
+          </div>
+          
+          <!-- Gates Strip -->
+          <div class="gates-strip" id="gates-box">
+            <span class="gate-badge">Consistent ✓</span>
+            <span class="gate-badge">Confident ✓</span>
+            <span class="gate-badge">Not Ranging ✓</span>
+            <span class="gate-badge">Matches Bias ✓</span>
+            <span class="gate-badge">IV Known ✓</span>
+            <span class="gate-badge">Setup Quality ✓</span>
+          </div>
+
+          <!-- Jev Typed Questions -->
+          <div class="jev-list" id="jev-questions-list">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Active Position & Portfolio Greeks -->
+        <div class="card">
+          <div class="card-head">
+            Open Position & Greeks
+            <span id="pos-symbol">SPY</span>
+          </div>
+          <div class="pos-box">
+            <div class="pos-header">
+              <span class="pos-title" id="pos-desc" style="color:var(--dim)">No open position (FLAT)</span>
+              <span class="tag-action tag-flat" id="pos-badge">FLAT</span>
+            </div>
+            <div class="pos-greeks">
+              <div class="greek-item"><s>DELTA (Δ)</s><b id="gk-delta">0.00</b></div>
+              <div class="greek-item"><s>GAMMA (Γ)</s><b id="gk-gamma">0.00</b></div>
+              <div class="greek-item"><s>THETA (Θ/d)</s><b id="gk-theta">$0.00</b></div>
+              <div class="greek-item"><s>VEGA (V)</s><b id="gk-vega">$0.00</b></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Trade Activity Stream -->
+        <div class="card" style="flex:1">
+          <div class="card-head">
+            Recent Decision & Execution Feed
+            <span>Auto-refreshing</span>
+          </div>
+          <div style="overflow-x:auto; max-height:200px">
+            <table class="activity-table">
+              <thead>
+                <tr>
+                  <th>Time (ET)</th>
+                  <th>Spot</th>
+                  <th>Action</th>
+                  <th>Execution / Reason</th>
+                </tr>
+              </thead>
+              <tbody id="activity-rows">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Footer Status Bar -->
+  <footer>
+    <div>Sweep System One · Paper Trading Loop · Zero Broker Connectivity (Research Only)</div>
+    <div id="footer-sync">Connected · Local Engine State Synced</div>
+  </footer>
+</div>
+
+<!-- Pine Script Instructions Modal -->
+<div class="modal-overlay" id="pineModal" onclick="if(event.target===this)closePineModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div style="font-weight:700; font-size:14px; font-family:var(--font-mono); color:var(--ink); display:flex; align-items:center; gap:8px;">
+        <span style="color:var(--sky)">⚡</span> How to Add Sweep SMC Indicator to TradingView
+      </div>
+      <button onclick="closePineModal()" style="background:transparent; border:none; color:var(--dim); font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>You can add the exact Smart Money Concepts indicator directly onto your TradingView chart in two ways:</p>
+      
+      <div style="background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.25); border-radius:8px; padding:12px 14px;">
+        <b style="color:var(--sky)">Option A (Instant · 1-Click Community Indicator):</b>
+        <ol style="margin-left:20px; margin-top:6px; display:flex; flex-direction:column; gap:4px; font-size:12.5px;">
+          <li>In the TradingView chart, click the <b>Indicators (fx)</b> button on the top toolbar.</li>
+          <li>Search for <b>"Smart Money Concepts [LuxAlgo]"</b> or <b>"Smart Money Concepts"</b>.</li>
+          <li>Click to add it to your chart! It will automatically plot Order Blocks, FVGs, and BOS lines.</li>
+        </ol>
+      </div>
+
+      <div style="background:rgba(255,95,200,0.08); border:1px solid rgba(255,95,200,0.25); border-radius:8px; padding:12px 14px;">
+        <b style="color:var(--magenta)">Option B (Sweep's Custom Pine Script v5 Indicator):</b>
+        <ol style="margin-left:20px; margin-top:6px; display:flex; flex-direction:column; gap:4px; font-size:12.5px;">
+          <li>Click the <b>"📋 Copy Pine Script"</b> button below.</li>
+          <li>Open your TradingView layout in full view (or on TradingView.com), click <b>Pine Editor</b> at the bottom.</li>
+          <li>Paste the code, click <b>Save</b>, and click <b>Add to chart</b>!</li>
+        </ol>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+        <span style="font-size:11px; font-family:var(--font-mono); color:var(--dim);">Sweep Pine Script v5 Code:</span>
+        <button class="tv-action-btn" onclick="copyPineScript()" id="copyScriptBtn">📋 Copy Full Script</button>
+      </div>
+      <div class="modal-code-box" id="pineScriptContent"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="tv-action-btn" onclick="copyPineScript()">📋 Copy Full Script</button>
+      <button class="ctrl-btn" style="padding:6px 16px; background:#1e293b; color:#fff;" onclick="closePineModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  // ==============================================================================
+  // 1. TradingView Advanced Chart Integration & Tab Switching
+  // ==============================================================================
+  let tvWidget = null;
+  function initTradingView() {
+    if (typeof TradingView === "undefined") {
+      setTimeout(initTradingView, 200);
+      return;
+    }
+    try {
+      tvWidget = new TradingView.widget({
+        "autosize": true,
+        "symbol": "AMEX:SPY",
+        "interval": "60",
+        "timezone": "America/New_York",
+        "theme": "dark",
+        "style": "1",
+        "locale": "en",
+        "toolbar_bg": "#080a10",
+        "enable_publishing": false,
+        "allow_symbol_change": true,
+        "container_id": "tradingview_advanced_chart",
+        "hide_side_toolbar": false,
+        "withdateranges": true,
+        "save_image": true,
+        "details": true,
+        "hotlist": false,
+        "calendar": false
+      });
+    } catch (e) {
+      console.warn("TradingView init error:", e);
+    }
+  }
+
+  let currentLayoutMode = 'split';
+  function setLayoutMode(mode) {
+    currentLayoutMode = mode;
+    const grid = document.getElementById("dualChartGrid");
+    const btnSplit = document.getElementById("btn-split");
+    const btnTv = document.getElementById("btn-tv");
+    const btnSmc = document.getElementById("btn-smc");
+
+    btnSplit.classList.remove("active");
+    btnTv.classList.remove("active");
+    btnSmc.classList.remove("active");
+
+    grid.classList.remove("mode-split", "mode-tv", "mode-smc");
+
+    if (mode === "split") {
+      btnSplit.classList.add("active");
+      grid.classList.add("mode-split");
+    } else if (mode === "tv") {
+      btnTv.classList.add("active");
+      grid.classList.add("mode-tv");
+    } else if (mode === "smc") {
+      btnSmc.classList.add("active");
+      grid.classList.add("mode-smc");
+    }
+
+    setTimeout(resizeCanvas, 50);
+    setTimeout(resizeCanvas, 250);
+  }
+
+  const PINE_SCRIPT_CODE = `//@version=5
+indicator("Sweep · Smart Money Concepts & Jev AI Setup", "Sweep SMC Setup", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+pivot_len = input.int(3, "Pivot Confirmation Length", minval=1, maxval=10)
+show_bos  = input.bool(true, "Show BOS / CHoCH Lines")
+show_ob   = input.bool(true, "Show Order Blocks")
+show_fvg  = input.bool(true, "Show Fair Value Gaps")
+fvg_min_atr = input.float(0.25, "Min Gap Size (ATR Multiple)")
+show_hud  = input.bool(true, "Show Algorithm HUD on Chart")
+
+atr_val = ta.atr(14)
+ph = ta.pivothigh(high, pivot_len, pivot_len)
+pl = ta.pivotlow(low, pivot_len, pivot_len)
+
+var float last_sh = na, var int last_sh_bar = na
+var float last_sl = na, var int last_sl_bar = na
+var int market_trend = 0
+
+if not na(ph)
+    last_sh := ph
+    last_sh_bar := bar_index - pivot_len
+if not na(pl)
+    last_sl := pl
+    last_sl_bar := bar_index - pivot_len
+
+bull_break = not na(last_sh) and close[1] <= last_sh and close > last_sh
+bear_break = not na(last_sl) and close[1] >= last_sl and close < last_sl
+
+is_choch_bull = bull_break and market_trend == -1
+is_bos_bull   = bull_break and market_trend >= 0
+is_choch_bear = bear_break and market_trend == 1
+is_bos_bear   = bear_break and market_trend <= 0
+
+if bull_break
+    market_trend := 1
+    if show_bos and not na(last_sh_bar)
+        line.new(last_sh_bar, last_sh, bar_index, last_sh, color=is_choch_bull ? #ffd166 : #10b981, style=line.style_dashed, width=1)
+        label.new(math.round((last_sh_bar + bar_index)/2), last_sh, is_choch_bull ? "CHoCH" : "BOS", color=color.new(#000000, 100), textcolor=is_choch_bull ? #ffd166 : #10b981, style=label.style_label_down, size=size.tiny)
+    last_sh := na
+
+if bear_break
+    market_trend := -1
+    if show_bos and not na(last_sl_bar)
+        line.new(last_sl_bar, last_sl, bar_index, last_sl, color=is_choch_bear ? #ffd166 : #f43f5e, style=line.style_dashed, width=1)
+        label.new(math.round((last_sl_bar + bar_index)/2), last_sl, is_choch_bear ? "CHoCH" : "BOS", color=color.new(#000000, 100), textcolor=is_choch_bear ? #ffd166 : #f43f5e, style=label.style_label_up, size=size.tiny)
+    last_sl := na
+
+// Order Blocks
+var box[] active_bull_obs = array.new_box()
+var box[] active_bear_obs = array.new_box()
+
+if bull_break and show_ob
+    int lowest_bar = bar_index
+    float min_l = low
+    for k = 1 to math.min(10, bar_index)
+        if low[k] < min_l
+            min_l := low[k]
+            lowest_bar := bar_index - k
+    box b = box.new(lowest_bar, high[bar_index - lowest_bar], bar_index + 10, low[bar_index - lowest_bar], border_color=color.new(#10b981, 20), bgcolor=color.new(#10b981, 75))
+    array.push(active_bull_obs, b)
+
+if bear_break and show_ob
+    int highest_bar = bar_index
+    float max_h = high
+    for k = 1 to math.min(10, bar_index)
+        if high[k] > max_h
+            max_h := high[k]
+            highest_bar := bar_index - k
+    box b = box.new(highest_bar, high[bar_index - highest_bar], bar_index + 10, low[bar_index - highest_bar], border_color=color.new(#f43f5e, 20), bgcolor=color.new(#f43f5e, 75))
+    array.push(active_bear_obs, b)
+
+// FVGs
+bull_fvg = show_fvg and (low > high[2]) and ((low - high[2]) >= fvg_min_atr * atr_val)
+bear_fvg = show_fvg and (high < low[2]) and ((low[2] - high) >= fvg_min_atr * atr_val)
+
+if bull_fvg
+    box.new(bar_index - 1, low, bar_index + 6, high[2], border_color=color.new(#38bdf8, 40), bgcolor=color.new(#38bdf8, 80))
+if bear_fvg
+    box.new(bar_index - 1, low[2], bar_index + 6, high, border_color=color.new(#f59e0b, 40), bgcolor=color.new(#f59e0b, 80))
+
+// Sweeps
+bull_sweep = not na(last_sl) and (low < last_sl) and (close > last_sl)
+bear_sweep = not na(last_sh) and (high > last_sh) and (close < last_sh)
+// HUD Table
+var table hud = table.new(position.top_right, 2, 7, bgcolor=color.new(#06070a, 15), border_color=color.new(#ffffff, 12), border_width=1)
+if show_hud and barstate.islast
+    hud := table.new(position.top_right, 2, 7, bgcolor=color.new(#06070a, 15), border_color=color.new(#ffffff, 15), border_width=1)
+    table.cell(hud, 0, 0, "⚡ SWEEP · JEV AI", bgcolor=color.new(#ff5fc8, 20), text_color=#ff5fc8, text_size=size.small, text_halign=text.align_left)
+    table.cell(hud, 1, 0, "System One", bgcolor=color.new(#ff5fc8, 20), text_color=#f1f5f9, text_size=size.small, text_halign=text.align_right)
+    string trend_str = market_trend == 1 ? "BULLISH (BOS)" : market_trend == -1 ? "BEARISH (BOS)" : "RANGING"
+    color trend_col = market_trend == 1 ? #10b981 : market_trend == -1 ? #f43f5e : #8492a6
+    table.cell(hud, 0, 1, "Structure Bias", text_color=#8492a6, text_size=size.small, text_halign=text.align_left)
+    table.cell(hud, 1, 1, trend_str, text_color=trend_col, text_size=size.small, text_halign=text.align_right)
+    string act_str = market_trend == 1 ? "BULL PUT SPREAD" : market_trend == -1 ? "BEAR CALL SPREAD" : "NO TRADE (FLAT)"
+    color act_col = market_trend == 1 ? #10b981 : market_trend == -1 ? #f43f5e : #8492a6
+    table.cell(hud, 0, 2, "Strategy", text_color=#8492a6, text_size=size.small, text_halign=text.align_left)
+    table.cell(hud, 1, 2, act_str, text_color=act_col, text_size=size.small, text_halign=text.align_right)
+    table.cell(hud, 0, 3, "Strike Delta", text_color=#8492a6, text_size=size.small, text_halign=text.align_left)
+    table.cell(hud, 1, 3, "~0.25 (80% Win Prob)", text_color=#38bdf8, text_size=size.small, text_halign=text.align_right)
+    string qual = (array.size(active_bull_obs) > 0 or array.size(active_bear_obs) > 0) ? "3.13 / 4.0 ★★★☆" : "2.10 / 4.0 ★★☆☆"
+    table.cell(hud, 0, 4, "Setup Quality", text_color=#8492a6, text_size=size.small, text_halign=text.align_left)
+    table.cell(hud, 1, 4, qual, text_color=#ffd166, text_size=size.small, text_halign=text.align_right)
+    string ob_info = str.tostring(array.size(active_bull_obs) + array.size(active_bear_obs)) + " Active OBs"
+    table.cell(hud, 0, 5, "Order Blocks", text_color=#8492a6, text_size=size.small, text_halign=text.align_left)
+    table.cell(hud, 1, 5, ob_info, text_color=#f1f5f9, text_size=size.small, text_halign=text.align_right)
+    table.cell(hud, 0, 6, "Paper Engine", text_color=#8492a6, text_size=size.small, text_halign=text.align_left)
+    table.cell(hud, 1, 6, "🟢 LIVE TICKING", text_color=#10b981, text_size=size.small, text_halign=text.align_right)
+`;
+
+  function openPineModal() {
+    const modal = document.getElementById("pineModal");
+    const codeEl = document.getElementById("pineScriptContent");
+    codeEl.textContent = PINE_SCRIPT_CODE;
+    modal.style.display = "flex";
+  }
+
+  function closePineModal() {
+    document.getElementById("pineModal").style.display = "none";
+  }
+
+  function copyPineScript() {
+    navigator.clipboard.writeText(PINE_SCRIPT_CODE).then(() => {
+      const btn = document.getElementById("copyScriptBtn");
+      const orig = btn.textContent;
+      btn.textContent = "✓ Copied to Clipboard!";
+      btn.style.borderColor = "var(--emerald)";
+      btn.style.color = "var(--emerald)";
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.borderColor = "";
+        btn.style.color = "";
+      }, 2000);
+    });
+  }
+
+  // ==============================================================================
+  // 2. Interactive Native SMC Candlestick Chart Engine
+  // ==============================================================================
+  let smcData = null;
+  let viewCount = 80;      // Number of bars visible
+  let viewOffset = 0;      // Pan offset (0 = latest bars)
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartOffset = 0;
+  let hoverBarIdx = -1;
+  let lastSpotPrice = 764.02;
+
+  const canvas = document.getElementById("smcChartCanvas");
+  const viewport = document.getElementById("chartViewport");
+  const tooltip = document.getElementById("chart-tooltip");
+
+  function resizeCanvas() {
+    if (!canvas || !viewport) return;
+    const rect = viewport.getBoundingClientRect();
+    const W = rect.width;
+    const H = rect.height;
+    if (W === 0 || H === 0) return;
+    canvas.width = W * window.devicePixelRatio;
+    canvas.height = H * window.devicePixelRatio;
+    renderChart();
+  }
+  window.addEventListener("resize", resizeCanvas);
+
+  function zoomChart(delta) {
+    if (!smcData || !smcData.bars) return;
+    const total = smcData.bars.c.length;
+    viewCount = Math.max(25, Math.min(total, viewCount + delta));
+    renderChart();
+  }
+
+  function resetZoom() {
+    viewCount = 80;
+    viewOffset = 0;
+    renderChart();
+  }
+
+  // Mouse pan & zoom event listeners
+  viewport.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 6 : -6;
+    zoomChart(delta);
+  }, { passive: false });
+
+  viewport.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    dragStartX = e.clientX;
+    dragStartOffset = viewOffset;
+    viewport.style.cursor = "grabbing";
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (isDragging) {
+      isDragging = false;
+      viewport.style.cursor = "crosshair";
+    }
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (isDragging) {
+      const dx = e.clientX - dragStartX;
+      const rect = viewport.getBoundingClientRect();
+      const barPx = (rect.width - 70) / viewCount;
+      const barsDelta = Math.round(dx / barPx);
+      const total = smcData ? smcData.bars.c.length : 100;
+      viewOffset = Math.max(0, Math.min(total - viewCount, dragStartOffset + barsDelta));
+      renderChart();
+    } else {
+      handleHover(e);
+    }
+  });
+
+  viewport.addEventListener("mouseleave", () => {
+    tooltip.style.display = "none";
+    hoverBarIdx = -1;
+    renderChart();
+  });
+
+  function handleHover(e) {
+    if (!smcData || !smcData.bars) return;
+    const rect = viewport.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const W = rect.width;
+    const H = rect.height;
+
+    const B = smcData.bars;
+    const n = B.c.length;
+    const end = Math.max(0, n - 1 - viewOffset);
+    const start = Math.max(0, end - viewCount + 1);
+    const count = end - start + 1;
+
+    const padLeft = 14, padRight = 65, padTop = 20, padBtm = 24;
+    const chartW = W - padLeft - padRight;
+    const dx = chartW / count;
+
+    if (mx >= padLeft && mx <= W - padRight) {
+      const relIdx = Math.floor((mx - padLeft) / dx);
+      const barIdx = start + relIdx;
+      if (barIdx >= start && barIdx <= end) {
+        hoverBarIdx = barIdx;
+        const o = B.o[barIdx], h = B.h[barIdx], l = B.l[barIdx], c = B.c[barIdx], t = B.t[barIdx];
+        const isUp = c >= o;
+        tooltip.innerHTML = `
+          <div><b>${t} ET</b></div>
+          <div>O: <b>$${o.toFixed(2)}</b> H: <b>$${h.toFixed(2)}</b></div>
+          <div>L: <b>$${l.toFixed(2)}</b> C: <b style="color:${isUp ? 'var(--emerald)' : 'var(--rose)'}">$${c.toFixed(2)}</b></div>
+        `;
+        tooltip.style.display = "block";
+        const tx = Math.min(W - 170, Math.max(10, mx + 15));
+        const ty = Math.min(H - 80, Math.max(10, my - 40));
+        tooltip.style.left = `${tx}px`;
+        tooltip.style.top = `${ty}px`;
+        renderChart();
+        return;
+      }
+    }
+    tooltip.style.display = "none";
+    hoverBarIdx = -1;
+    renderChart();
+  }
+
+  function renderChart() {
+    if (!canvas || !smcData || !smcData.bars) return;
+    const rect = viewport.getBoundingClientRect();
+    const W = rect.width;
+    const H = rect.height;
+    if (W === 0 || H === 0) return;
+
+    const g = canvas.getContext("2d");
+    g.save();
+    g.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+    // Dark sleek background
+    g.fillStyle = "#06070a";
+    g.fillRect(0, 0, W, H);
+
+    const B = smcData.bars;
+    const n = B.c.length;
+    if (n === 0) { g.restore(); return; }
+
+    const end = Math.max(0, n - 1 - viewOffset);
+    const start = Math.max(0, end - viewCount + 1);
+    const count = end - start + 1;
+
+    let pLo = Infinity, pHi = -Infinity;
+    for (let k = start; k <= end; k++) {
+      if (B.l[k] < pLo) pLo = B.l[k];
+      if (B.h[k] > pHi) pHi = B.h[k];
+    }
+    const pad = (pHi - pLo) * 0.08 || 1;
+    pLo -= pad; pHi += pad;
+
+    const padLeft = 14, padRight = 65, padTop = 20, padBtm = 24;
+    const chartW = W - padLeft - padRight;
+    const chartH = H - padTop - padBtm;
+    const dx = chartW / count;
+
+    function X(idx) { return padLeft + (idx - start + 0.5) * dx; }
+    function Y(val) { return padTop + (pHi - val) / (pHi - pLo) * chartH; }
+
+    // Price Horizontal Grid Lines
+    g.strokeStyle = "rgba(255,255,255,0.04)";
+    g.lineWidth = 1;
+    g.font = "9.5px 'JetBrains Mono', monospace";
+    g.fillStyle = "#64748b";
+    for (let step = 0; step <= 5; step++) {
+      const price = pLo + (pHi - pLo) * (step / 5);
+      const y = Y(price);
+      g.beginPath();
+      g.moveTo(padLeft, y);
+      g.lineTo(W - padRight, y);
+      g.stroke();
+      g.fillText(`$${price.toFixed(2)}`, W - padRight + 6, y + 3);
+    }
+
+    // Time Vertical Grid Lines
+    g.fillStyle = "#475569";
+    const timeStep = Math.max(6, Math.floor(count / 7));
+    for (let k = start; k <= end; k += timeStep) {
+      const x = X(k);
+      g.beginPath();
+      g.moveTo(x, padTop);
+      g.lineTo(x, H - padBtm);
+      g.stroke();
+      const tStr = B.t[k].split(" ")[1] || "";
+      g.fillText(tStr, x - 12, H - 8);
+    }
+
+    // 1. SMC Order Blocks (Boxes painted directly on the chart)
+    if (smcData.zones) {
+      for (const z of smcData.zones) {
+        if (z.type !== "ob") continue;
+        if (z.f > end) continue;
+        const zEnd = (z.e == null || z.e > end) ? end : z.e;
+        if (zEnd < start) continue;
+
+        const x0 = X(Math.max(start, z.c != null ? Math.max(z.c, start) : z.f));
+        const x1 = X(zEnd) + dx / 2;
+        const boxW = Math.max(4, x1 - x0);
+        const yTop = Y(z.top);
+        const yBtm = Y(z.bottom);
+        const boxH = Math.max(2, yBtm - yTop);
+
+        const isBull = z.side > 0;
+        g.fillStyle = isBull ? "rgba(16, 185, 129, 0.22)" : "rgba(244, 63, 94, 0.22)";
+        g.strokeStyle = isBull ? "rgba(16, 185, 129, 0.75)" : "rgba(244, 63, 94, 0.75)";
+        g.lineWidth = 1;
+
+        g.fillRect(x0, yTop, boxW, boxH);
+        g.strokeRect(x0, yTop, boxW, boxH);
+
+        // Label on OB box
+        g.fillStyle = isBull ? "#10b981" : "#f43f5e";
+        g.font = "8px 'JetBrains Mono', monospace";
+        if (boxW > 35) {
+          g.fillText(isBull ? "BULL OB" : "BEAR OB", x0 + 4, yTop + 10);
+        }
+      }
+
+      // 2. SMC Fair Value Gaps (FVG imbalance boxes)
+      for (const z of smcData.zones) {
+        if (z.type !== "fvg") continue;
+        if (z.f > end) continue;
+        const zEnd = (z.e == null || z.e > end) ? end : z.e;
+        if (zEnd < start) continue;
+
+        const x0 = X(Math.max(start, z.f));
+        const x1 = X(zEnd) + dx / 2;
+        const boxW = Math.max(3, x1 - x0);
+        const yTop = Y(z.top);
+        const yBtm = Y(z.bottom);
+        const boxH = Math.max(2, yBtm - yTop);
+
+        const isBull = z.side > 0;
+        g.fillStyle = isBull ? "rgba(56, 189, 248, 0.16)" : "rgba(245, 158, 11, 0.16)";
+        g.strokeStyle = isBull ? "rgba(56, 189, 248, 0.65)" : "rgba(245, 158, 11, 0.65)";
+        g.lineWidth = 1;
+        g.setLineDash([2, 2]);
+        g.fillRect(x0, yTop, boxW, boxH);
+        g.strokeRect(x0, yTop, boxW, boxH);
+        g.setLineDash([]);
+
+        if (boxW > 30) {
+          g.fillStyle = isBull ? "#38bdf8" : "#f59e0b";
+          g.font = "8px 'JetBrains Mono', monospace";
+          g.fillText("FVG", x0 + 4, yTop + 9);
+        }
+      }
+
+      // 3. SMC Liquidity Pools (Equal Highs / Equal Lows / BSL & SSL Pools)
+      for (const z of smcData.zones) {
+        if (z.type !== "pool") continue;
+        if (z.f > end) continue;
+        const zEnd = (z.e == null || z.e > end) ? end : z.e;
+        if (zEnd < start) continue;
+
+        const x0 = X(Math.max(start, z.f));
+        const x1 = X(zEnd) + dx / 2;
+        const yLevel = Y(z.top);
+
+        g.strokeStyle = "#ffd166";
+        g.lineWidth = 1.3;
+        if (g.setLineDash) g.setLineDash(z.eq ? [] : [3, 3]);
+        g.beginPath();
+        g.moveTo(x0, yLevel);
+        g.lineTo(x1, yLevel);
+        g.stroke();
+        if (g.setLineDash) g.setLineDash([]);
+
+        if (x1 - x0 > 25) {
+          g.fillStyle = "#ffd166";
+          g.font = "8px 'JetBrains Mono', monospace";
+          g.fillText(z.side > 0 ? "BSL" : "SSL", x1 - 22, yLevel - 4);
+        }
+      }
+    }
+
+    // 3. Candlesticks
+    const bw = Math.max(2, dx * 0.68);
+    for (let k = start; k <= end; k++) {
+      const x = X(k), o = B.o[k], c = B.c[k], h = B.h[k], l = B.l[k];
+      const isUp = c >= o;
+      const col = isUp ? "#10b981" : "#f43f5e";
+
+      // Wick
+      g.strokeStyle = col;
+      g.lineWidth = 1.2;
+      g.beginPath();
+      g.moveTo(x, Y(h));
+      g.lineTo(x, Y(l));
+      g.stroke();
+
+      // Body
+      g.fillStyle = col;
+      const bodyY = Y(Math.max(o, c));
+      const bodyH = Math.max(1, Math.abs(Y(o) - Y(c)));
+      g.fillRect(x - bw / 2, bodyY, bw, bodyH);
+    }
+
+    // 4. Swing Pivots (▲ / ▼ markers directly on the swing extremes)
+    if (smcData.pivots) {
+      g.font = "bold 9px sans-serif";
+      for (const p of smcData.pivots) {
+        if (p.i < start || p.i > end) continue;
+        const x = X(p.i);
+        if (p.hi) {
+          g.fillStyle = "#f43f5e";
+          g.fillText("▲", x - 4, Y(p.p) - 6);
+        } else {
+          g.fillStyle = "#10b981";
+          g.fillText("▼", x - 4, Y(p.p) + 14);
+        }
+      }
+    }
+
+    // 5. Market Structure Breaks (BOS / CHoCH dashed horizontal lines)
+    if (smcData.breaks) {
+      g.font = "9px 'JetBrains Mono', monospace";
+      for (const b of smcData.breaks) {
+        if (b.i < start || b.i > end) continue;
+        const x0 = X(Math.max(start, b.from)), x1 = X(b.i);
+        const col = b.kind === "CHoCH" ? "#ffd166" : (b.dir > 0 ? "#10b981" : "#f43f5e");
+        g.strokeStyle = col;
+        g.lineWidth = 1.2;
+        g.setLineDash([3, 2]);
+        g.beginPath();
+        g.moveTo(x0, Y(b.level));
+        g.lineTo(x1, Y(b.level));
+        g.stroke();
+        g.setLineDash([]);
+
+        g.fillStyle = col;
+        g.fillText(b.kind, x1 - 16, Y(b.level) + (b.dir > 0 ? -5 : 12));
+      }
+    }
+
+    // 6. Executed Trades (Entry circles & Exit crosses directly on candles)
+    if (smcData.trades) {
+      for (const t of smcData.trades) {
+        if (t.i_in >= start && t.i_in <= end) {
+          g.fillStyle = "#38bdf8";
+          g.beginPath();
+          g.arc(X(t.i_in), Y(B.c[t.i_in]), 4.5, 0, Math.PI * 2);
+          g.fill();
+          g.strokeStyle = "#ffffff";
+          g.lineWidth = 1.2;
+          g.stroke();
+        }
+        if (t.i_out != null && t.i_out >= start && t.i_out <= end) {
+          g.font = "bold 12px sans-serif";
+          g.fillStyle = (t.pnl >= 0) ? "#10b981" : "#f43f5e";
+          g.fillText("✕", X(t.i_out) - 5, Y(B.c[t.i_out]) + 4);
+        }
+      }
+    }
+
+    // 7. Current Live Spot Price Dashed Line across the chart
+    const spotY = Y(lastSpotPrice);
+    if (spotY >= padTop && spotY <= H - padBtm) {
+      g.strokeStyle = "rgba(56, 189, 248, 0.6)";
+      g.lineWidth = 1;
+      g.setLineDash([4, 3]);
+      g.beginPath();
+      g.moveTo(padLeft, spotY);
+      g.lineTo(W - padRight, spotY);
+      g.stroke();
+      g.setLineDash([]);
+
+      // Spot Price Tag on Right Axis
+      g.fillStyle = "var(--sky)";
+      g.fillRect(W - padRight, spotY - 8, padRight, 16);
+      g.fillStyle = "#000";
+      g.font = "bold 9px 'JetBrains Mono', monospace";
+      g.fillText(`$${lastSpotPrice.toFixed(2)}`, W - padRight + 5, spotY + 3.5);
+    }
+
+    // 7. Hover Crosshair
+    if (hoverBarIdx >= start && hoverBarIdx <= end) {
+      const hx = X(hoverBarIdx);
+      g.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      g.lineWidth = 1;
+      g.setLineDash([2, 2]);
+      g.beginPath();
+      g.moveTo(hx, padTop);
+      g.lineTo(hx, H - padBtm);
+      g.stroke();
+      g.setLineDash([]);
+    }
+
+    g.restore();
+  }
+
+  // ==============================================================================
+  // 2. Live Countdown to Next Bar Close
+  // ==============================================================================
+  const CLOSE_MINS = [10*60+30, 11*60+30, 12*60+30, 13*60+30, 14*60+30, 15*60+30, 16*60];
+  function updateCountdown() {
+    const now = new Date();
+    const etStr = now.toLocaleString("en-US", { timeZone: "America/New_York" });
+    const et = new Date(etStr);
+    const day = et.getDay();
+    const curMin = et.getHours() * 60 + et.getMinutes();
+    const curSec = et.getSeconds();
+
+    let targetClose = null;
+    if (day >= 1 && day <= 5) {
+      for (const m of CLOSE_MINS) {
+        if (m > curMin) { targetClose = m; break; }
+      }
+    }
+
+    const cdEl = document.getElementById("countdown-val");
+    if (targetClose !== null) {
+      const diffSec = (targetClose - curMin) * 60 - curSec;
+      const mm = String(Math.floor(diffSec / 60)).padStart(2, '0');
+      const ss = String(diffSec % 60).padStart(2, '0');
+      cdEl.textContent = `${mm}m ${ss}s`;
+      cdEl.style.color = "var(--sky)";
+    } else {
+      cdEl.textContent = "Market Closed";
+      cdEl.style.color = "var(--dim)";
+    }
+  }
+  setInterval(updateCountdown, 1000);
+  updateCountdown();
+
+  // ==============================================================================
+  // 3. Dynamic Data Polling from Local Paper State & Structure
+  // ==============================================================================
+  const QUESTION_COLORS = {
+    buy_calls: "#10b981", buy_puts: "#f43f5e", sell_premium: "#ffd166", no_trade: "#64748b",
+    bullish: "#10b981", bearish: "#f43f5e", ranging: "#64748b",
+    filled: "#38bdf8", respected: "#10b981", no_gap: "#64748b",
+    premium: "#f43f5e", discount: "#10b981", equilibrium: "#f59e0b",
+    elevated: "#f59e0b", normal: "#38bdf8", low: "#10b981", unknown: "#64748b"
+  };
+
+  async function pollState() {
+    try {
+      const res = await fetch("/paper_state/state.json?t=" + Date.now());
+      if (!res.ok) return;
+      const state = await res.json();
+      
+      // Update KPIs
+      if (state.cash != null) {
+        document.getElementById("kpi-cash").textContent = `$${state.cash.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      }
+      const eq = state.cash || 100000;
+      document.getElementById("kpi-equity").textContent = `$${eq.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      
+      if (state.last_tick) {
+        const dt = new Date(state.last_tick);
+        document.getElementById("last-tick-time").textContent = dt.toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " ET";
+      }
+
+      if (state.trades) {
+        document.getElementById("kpi-closed-count").textContent = `${state.trades.length} Closed Trades`;
+      }
+
+      // Position update
+      const pos = state.position;
+      const pDesc = document.getElementById("pos-desc");
+      const pBadge = document.getElementById("pos-badge");
+      const pKpi = document.getElementById("kpi-pos-state");
+      if (pos) {
+        pDesc.textContent = `${pos.kind.replace(/_/g, ' ').toUpperCase()} (${pos.contracts}x)`;
+        pDesc.style.color = "var(--ink)";
+        pBadge.textContent = "OPEN";
+        pBadge.className = "tag-action tag-call_credit_spread";
+        pKpi.textContent = "OPEN";
+        pKpi.style.color = "var(--amber)";
+      } else {
+        pDesc.textContent = "No open position (FLAT)";
+        pDesc.style.color = "var(--dim)";
+        pBadge.textContent = "FLAT";
+        pBadge.className = "tag-action tag-flat";
+        pKpi.textContent = "FLAT";
+        pKpi.style.color = "var(--dim)";
+      }
+
+      // Latest materiality state & questions
+      if (state.materiality && state.materiality.SPY) {
+        const jevResp = state.materiality.SPY[1];
+        if (jevResp && jevResp.answers) {
+          renderJevAnswers(jevResp.answers);
+        }
+      }
+    } catch (e) {
+      console.warn("Poll state error:", e);
+    }
+
+    // Poll decisions.jsonl for execution stream
+    try {
+      const dRes = await fetch("/paper_state/decisions.jsonl?t=" + Date.now());
+      if (dRes.ok) {
+        const text = await dRes.text();
+        const lines = text.trim().split("\n").filter(Boolean);
+        if (lines.length) {
+          const last = JSON.parse(lines[lines.length - 1]);
+          if (last.spot) {
+            lastSpotPrice = last.spot;
+            document.getElementById("kpi-spot").textContent = `$${last.spot.toFixed(2)}`;
+          }
+          if (last.state) {
+            updateSmcBoxes(last.state);
+          }
+          if (last.action) {
+            const actStr = (last.structure || last.action).replace(/_/g, ' ').toUpperCase();
+            document.getElementById("kpi-action").textContent = actStr;
+            document.getElementById("pill-setup-val").textContent = actStr;
+          }
+          if (last.gates) {
+            updateGates(last.gates);
+          }
+          renderActivityRows(lines.slice(-6).reverse());
+        }
+      }
+    } catch (e) {
+      console.warn("Poll decisions error:", e);
+    }
+
+    // Poll structure.json for SMC candles & zones
+    try {
+      const sRes = await fetch("/paper_state/structure.json?t=" + Date.now());
+      if (sRes.ok) {
+        smcData = await sRes.json();
+        if (smcData.zones && smcData.zones.length) {
+          const obs = smcData.zones.filter(z => z.type === 'ob');
+          const fvgs = smcData.zones.filter(z => z.type === 'fvg');
+          if (obs.length) {
+            const lastOb = obs[obs.length - 1];
+            const rangeStr = `$${Math.min(lastOb.top, lastOb.bottom).toFixed(2)} - $${Math.max(lastOb.top, lastOb.bottom).toFixed(2)}`;
+            document.getElementById("pill-ob-val").textContent = rangeStr;
+          }
+          if (fvgs.length) {
+            const lastFvg = fvgs[fvgs.length - 1];
+            const fvgStr = `$${Math.min(lastFvg.top, lastFvg.bottom).toFixed(2)} - $${Math.max(lastFvg.top, lastFvg.bottom).toFixed(2)}`;
+            document.getElementById("pill-fvg-val").textContent = fvgStr;
+          }
+        }
+        renderChart();
+      }
+    } catch (e) {}
+  }
+
+  function renderJevAnswers(answers) {
+    const list = document.getElementById("jev-questions-list");
+    let html = "";
+    for (const [qid, a] of Object.entries(answers)) {
+      let qtype = a.type || "choice";
+      let tc = qtype === "choice" ? "var(--sky)" : qtype === "score" ? "var(--amber)" : "var(--magenta)";
+      let barHtml = "";
+      let cfStr = "--";
+
+      if (a.type === "noul") {
+        const val = a.noul ?? 0;
+        barHtml = `<div class="q-bar-fill" style="width:${(val*100).toFixed(0)}%;background:var(--magenta)">${Math.round(val*100)}%</div>`;
+        cfStr = val.toFixed(2);
+      } else if (a.type === "choice") {
+        const col = QUESTION_COLORS[a.choice] || "var(--sky)";
+        const conf = a.confidence ?? 0;
+        barHtml = `<div class="q-bar-fill" style="width:${Math.max(15, conf*100).toFixed(0)}%;background:${col}">${a.choice}</div>`;
+        cfStr = conf.toFixed(2);
+        if (qid === "structure_bias") {
+          document.getElementById("kpi-bias").textContent = (a.choice || "BEARISH").toUpperCase();
+          document.getElementById("kpi-bias-conf").textContent = `${Math.round(conf * 100)}%`;
+        }
+      } else if (a.type === "score") {
+        const sc = Math.min(4, Math.max(0, a.score ?? 0));
+        const conf = a.confidence ?? 0;
+        barHtml = `<div class="q-bar-fill" style="width:${((sc+1)/5*100).toFixed(0)}%;background:var(--amber)">L${sc.toFixed(1)}</div>`;
+        cfStr = conf.toFixed(2);
+        if (qid === "setup_quality") {
+          document.getElementById("kpi-quality").textContent = `${sc.toFixed(2)} / 4.0`;
+        }
+      }
+
+      html += `
+        <div class="q-row">
+          <div class="q-name" title="${qid}">${qid}</div>
+          <div class="q-type" style="color:${tc};border-color:${tc}">${qtype}</div>
+          <div class="q-bar-box">${barHtml}</div>
+          <div class="q-conf">${cfStr}</div>
+        </div>
+      `;
+    }
+    list.innerHTML = html;
+  }
+
+  function updateSmcBoxes(st) {
+    if (st.structure) {
+      if (st.structure.daily_bias) {
+        document.getElementById("smc-daily-bias").textContent = st.structure.daily_bias.toUpperCase();
+      }
+      if (st.structure.hourly_trend) {
+        document.getElementById("smc-hourly-trend").textContent = st.structure.hourly_trend;
+        const isDown = st.structure.hourly_trend.includes("downward");
+        document.getElementById("pill-bos-val").textContent = isDown ? "BEARISH BOS" : "BULLISH BOS";
+      }
+    }
+    if (st.order_block && st.order_block.location) {
+      const obTxt = `${st.order_block.status || 'untested'} (${st.order_block.location})`;
+      document.getElementById("smc-ob").textContent = obTxt;
+    }
+    if (st.fair_value_gap && st.fair_value_gap.status) {
+      const fvgTxt = `${st.fair_value_gap.status} (${st.fair_value_gap.location || '<1 ATR'})`;
+      document.getElementById("smc-fvg").textContent = fvgTxt;
+    }
+    if (st.zone) {
+      document.getElementById("smc-zone").textContent = st.zone.toUpperCase();
+    }
+    if (st.volatility) {
+      document.getElementById("smc-iv").textContent = (st.volatility.iv_rank || "normal").toUpperCase();
+    }
+  }
+
+  function updateGates(gates) {
+    const box = document.getElementById("gates-box");
+    if (!box || !gates) return;
+    const names = [
+      { key: "consistent", label: "Consistent" },
+      { key: "confident", label: "Confident" },
+      { key: "not_ranging", label: "Not Ranging" },
+      { key: "direction_matches_bias", label: "Matches Bias" },
+      { key: "iv_known", label: "IV Known" },
+      { key: "setup", label: "Setup Quality" },
+      { key: "composite", label: "Composite" }
+    ];
+    let html = "";
+    for (const g of names) {
+      const ok = gates[g.key] === true;
+      html += `<span class="gate-badge" style="${ok ? 'color:var(--emerald);border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.1)' : 'color:var(--rose);border-color:rgba(244,63,94,0.3);background:rgba(244,63,94,0.1)'}">${g.label} ${ok ? '✓' : '✗'}</span>`;
+    }
+    box.innerHTML = html;
+  }
+
+  function renderActivityRows(rows) {
+    const tbody = document.getElementById("activity-rows");
+    let html = "";
+    for (const jsonStr of rows) {
+      try {
+        const d = JSON.parse(jsonStr);
+        const t = new Date(d.t).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" });
+        const act = d.structure || d.action || "hold";
+        const tagCls = act.includes("call") ? "tag-call_credit_spread" : act.includes("put") ? "tag-put_credit_spread" : "tag-flat";
+        const exec = d.execution || d.reason || "--";
+        html += `
+          <tr>
+            <td style="color:var(--dim)">${t}</td>
+            <td>$${d.spot?.toFixed(2) || '--'}</td>
+            <td><span class="tag-action ${tagCls}">${act.replace(/_/g, ' ')}</span></td>
+            <td style="color:var(--dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${exec}">${exec}</td>
+          </tr>
+        `;
+      } catch (e) {}
+    }
+    tbody.innerHTML = html;
+  }
+
+  // Initialize
+  window.addEventListener("DOMContentLoaded", () => {
+    initTradingView();
+    resizeCanvas();
+    pollState();
+    setInterval(pollState, 3000);
+  });
+</script>
+</body>
+</html>
