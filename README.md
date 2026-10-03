@@ -90,6 +90,8 @@ flowchart TD
 
 ## 🖥️ Real-Time Dual-Chart Workspace
 
+![Sweep Dual-Chart Live Workspace](assets/dashboard_preview.png)
+
 Sweep features an integrated HTML5 / Canvas dual split-screen cockpit accessible at `http://127.0.0.1:8765/live.html`:
 
 ```
