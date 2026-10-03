@@ -1,0 +1,20 @@
+# secrets
+.env
+.env.*
+*.key
+
+# run outputs and local data caches
+runs/
+data_cache/
+.sweep_cache/
+paper_state/
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/

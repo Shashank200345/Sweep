@@ -1,0 +1,38 @@
+Sweep includes code vendored or adapted from L1vsun/JEV-Trading-BOT
+(https://github.com/L1vsun/JEV-Trading-BOT):
+
+  sweep/typesafe.py          vendored verbatim (jev_bot/typesafe.py)
+  sweep/decide.py            mechanism adapted (jev_bot/decide.py): composite
+                             scoring, confidence-gated sizing, self-consistency
+  sweep/surrogate.py         pattern adapted (jev_bot/surrogate.py)
+  sweep/cli.py               scaffolding adapted (jev_bot/cli.py): --model,
+                             --cache, --replay-cache, models, ask
+  sweep/replay.py            shell adapted (jev_bot/replay.py): self-contained
+                             HTML replay with embedded JSON
+
+The reference project's quant code (order-flow imbalance, VPIN, Kyle's lambda,
+RLS fair value, simulator) is not used anywhere in Sweep.
+
+Its license:
+
+MIT License
+
+Copyright (c) 2026 jev-trading-bot contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

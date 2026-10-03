@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sweep"
+version = "0.1.0"
+description = "SMC-based options research bot (paper trading only), judged by Jev (TypeSafe System One)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+# Exact pins (AGENTS.md / safety guardrails). No numba, no compiled hot path.
+dependencies = [
+    "numpy==2.3.4",
+    "pandas==2.3.3",
+    "scipy==1.16.2",      # scipy.special.ndtr only: vectorized normal CDF for BSM
+    "httpx==0.28.1",
+    "pyarrow==21.0.0",
+]
+
+[project.optional-dependencies]
+# py_vollib is a TEST ORACLE ONLY. Runtime code must never import it.
+dev = ["pytest==9.1.1", "py_vollib==1.0.12"]
+
+[project.scripts]
+sweep = "sweep.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["sweep*"]
+
+[tool.setuptools.package-data]
+sweep = ["assets/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "lookahead: causality / look-ahead-bias suite (never weaken these to make a detector pass)",
+]
+filterwarnings = [
+    "ignore:py_vollib is deprecated:DeprecationWarning",
+]
