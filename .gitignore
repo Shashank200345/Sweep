@@ -18,3 +18,9 @@ venv/
 build/
 dist/
 .pytest_cache/
+
+# internal research & diagnostics
+Sweep_Blueprint.pdf
+PENDING_DECISIONS.md
+TESTS_PROOF_AND_IMPROVEMENTS.md
+TESTS_AND_DIAGNOSTICS_REPORT.md
