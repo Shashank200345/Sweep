@@ -200,4 +200,3 @@ Sweep/
 * In accordance with `AGENTS.md`, **no live broker execution code exists** anywhere in this repository.
 
 Licensed under the [MIT License](NOTICE).
-Built on the architectural foundation of [L1vsun/JEV-Trading-BOT](https://github.com/L1vsun/JEV-Trading-BOT).
